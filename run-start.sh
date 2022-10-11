@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-# Fail on error, verbose output
-set -exo pipefail
-
-# Build project
-ndk-build NDK_DEBUG=1 1>&2
-
 # Figure out which ABI and SDK the device has
 abi=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')
 sdk=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
@@ -38,22 +32,11 @@ if [ "$1" = "autosize" ]; then
 fi
 
 # Create a directory for our resources
-dir=/data/local/tmp/minicap-devel
-# Keep compatible with older devices that don't have `mkdir -p`.
-adb shell "mkdir $dir 2>/dev/null || true"
+dir=//data/local/tmp/minicap-devel
 
-# Upload the binary
-adb push libs/$abi/$bin $dir
-
-# Upload the shared library
-if [ -e jni/minicap-shared/aosp/libs/android-$rel/$abi/minicap.so ]; then
-  adb push jni/minicap-shared/aosp/libs/android-$rel/$abi/minicap.so $dir
-else
-  adb push jni/minicap-shared/aosp/libs/android-$sdk/$abi/minicap.so $dir
-fi
+echo $args
+echo $dir
+echo $dir/$bin
 
 # Run!
 adb shell LD_LIBRARY_PATH=$dir $dir/$bin $args "$@"
-
-# Clean up
-adb shell rm -r $dir
